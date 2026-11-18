@@ -1,0 +1,31 @@
+COSMO RUSH — versión completa actualizada
+
+Contenido: juego web listo para alojar, todos los gráficos, pilotos, sonidos,
+fuente y cambios de interfaz. Incluye el código de los cambios en
+source/pilots-patch.js, ya integrado en el JavaScript del juego.
+
+Cambios incluidos:
+- Nombre Cosmo Rush.
+- Mapache, capibara, tucán y Suri, con selección compacta.
+- Pilotos de frente en el menú y de espalda en la partida.
+- Suri como camaleón verde con auriculares.
+- Saludos ocasionales y fuego anclado al motor.
+- Menú con tipografía Lilita One, top 3 y ranking completo.
+- Idiomas ES/EN/PT centrados y nombres de animales traducidos.
+- Ajuste de tamaños para celular y web, con márgenes de área segura.
+
+Uso:
+Publicar index.html junto con assets, audio y backgrounds, respetando las carpetas.
+Para probar localmente, abrir una terminal en la carpeta extraída y ejecutar:
+python -m http.server 8000
+Luego visitar http://localhost:8000 en el navegador.
+Los módulos JavaScript requieren un servidor; abrir index.html con doble clic
+puede bloquear la carga.
+
+El ZIP original entregado contenía una compilación, no el proyecto TypeScript.
+Esta entrega conserva esa compilación con todos los cambios integrados.
+El ranking utiliza la integración original de la app; en modo independiente
+conserva los datos de ejemplo del juego original.
+
+Validación: sintaxis JavaScript, archivos y tamaños revisados por código.
+No se realizaron pruebas en dispositivos móviles físicos.

@@ -1,0 +1,6 @@
+node_modules/
+*.zip
+cosmo-rush-build-*/
+dist/
+.DS_Store
+Thumbs.db

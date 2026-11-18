@@ -1,0 +1,122 @@
+Cosmo Rush — Build Info
+=======================
+
+Versión:   1.0.1
+Fecha:     2026-10-22
+Base:      Pengu Rush 1.7.1 (compilación) + patch de pilotos
+Repo:      sin control de versiones (entrega como compilación, no proyecto TS)
+
+Modo:      RUNTIME — igual que Pengu Rush 1.5.0+: modo / parentOrigin /
+           gameId / apiBaseUrl llegan por INIT_GAME, no se hornean en la
+           build. Abierta suelta en una pestaña (no embebida) funciona en
+           modo standalone con el leaderboard de preview.
+
+Qué trae esta build (diferencias contra Pengu Rush 1.7.1):
+
+  1. Nombre e identidad: "COSMO RUSH" en menú, título y descripción.
+     Tipografía Lilita One embebida (assets/fonts/LilitaOne-Regular.ttf,
+     licencia OFL incluida), cargada por CSS + precarga en el bootstrap.
+
+  2. Cuatro pilotos seleccionables — mapache, capibara, tucán y Suri
+     (camaleón verde con auriculares) — en tarjetas compactas 2x2. La
+     selección se guarda en localStorage con la clave "pengu-pilot".
+
+  3. Pilotos de frente en el menú y de espalda en la partida, con saludo
+     ocasional (menú cada 6,5s; partida cada 9s, 1,5s de duración).
+
+  4. Fuego del motor anclado por piloto: tabla pilotExhaust con el offset
+     medido de cada sprite trasero, aplicado en kt.prototype.updateAnchor.
+
+  5. Menú rehecho: top 3 con nombres recortados al ancho disponible,
+     acceso al ranking completo, récord personal y chips ES / EN / PT
+     centrados, con los nombres de los animales traducidos.
+
+  6. Tamaños responsivos: 720 de ancho en celular con alto ajustado al
+     ratio real del dispositivo, hasta 1120x1280 en desktop. Márgenes de
+     área segura (env(safe-area-inset-*)) en el CSS, y viewport-fit=cover.
+
+El código de estos cambios está, sin minificar y comentado, en
+source/pilots-patch.js — ya integrado dentro de assets/cosmo-rush-v2.js.
+
+Contenido:   45 archivos, 17,5 MB sin comprimir / 16,4 MB en el ZIP.
+Entregable:  cosmo-rush-build-1.0.0.zip (mismo layout que las builds de
+             Pengu Rush: assets/, audio/, backgrounds/, favicon.png e
+             index.html en la raíz del ZIP).
+Staging:     dist/ — contenido idéntico al ZIP.
+
+Correcciones 1.0.1 (2026-10-22) — fallas en mobile:
+
+  A. Ranking sin puntos y recompensas sin pagar (misma causa).
+     El bridge mandaba TODO con window.parent.postMessage. Dentro de una
+     WebView nativa window.parent === window, así que los mensajes se los
+     mandaba a sí mismo y el host nunca recibía nada: sin MINIGAME_READY
+     no llegaba INIT_GAME (sin gameId/apiBaseUrl el ranking caía al
+     listado falso de preview) y GAME_COMPLETE nunca salía (no se pagaba
+     la recompensa). En iframe web funcionaba porque ahí hay padre real.
+       - Salida por window.ReactNativeWebView (JSON serializado; RN solo
+         transporta strings), con soporte también de webkit.messageHandlers
+         y de un bridge Android por @JavascriptInterface. Si no hay ninguno,
+         se usa el iframe como antes.
+       - Entrada: se escucha 'message' también en document (RN Android los
+         inyecta ahí, no en window) y se parsea el JSON de entrada. Se
+         acepta el payload anidado o plano.
+       - SESSION_ACCEPTED / STARTED / GAME_COMPLETE ya no exigen conocer el
+         origen del host: en nativo no hay origen y esa condición los dejaba
+         mudos. En iframe se mantiene la validación de origen intacta.
+       - Un envío que falla ya no propaga la excepción (cortaba el handshake).
+
+  B. Ranking: embebido nunca cae al listado de preview. Los alias inventados
+     (AgusM, SpeedRun_G, PenguFan22…) eran justamente lo que se veía como
+     "cargó mal". Si falla, el ranking queda vacío y la pantalla completa
+     muestra "No se pudo cargar el ranking" (ES/EN/PT). Timeout de 8s en el
+     fetch (con señal mala quedaba colgado) y 10s de espera del handshake.
+     En standalone se sigue mostrando el preview, que ahí es lo correcto.
+
+  C. Música muda en iOS. Los 14 audios eran solo .ogg Vorbis, que Safari no
+     decodifica: Phaser descartaba el archivo y MusicManager cortaba en
+     "Track music-bg not in cache". Se agregó cada pista en .m4a (AAC) junto
+     al .ogg y load.audio ahora recibe [ogg, m4a], así cada dispositivo elige
+     el que soporta. +236 KB en total; el .ogg se sigue usando en Android y
+     desktop.
+
+  D. localStorage blindado en cosmo-bootstrap-v2.js. Safari tira SecurityError
+     en iframes de terceros y en modo privado, y el juego lo usa sin try/catch
+     (récord, piloto, mute): una excepción ahí rompía el menú. Si no sirve, se
+     instala un reemplazo en memoria.
+
+  No aplican a esta build dos arreglos del juego hermano: el registro tardío
+  de onSessionReady (acá setupSuraIntegration ya lee el estado sincrónicamente
+  al suscribirse, y resyncJugarButton lo relee al terminar los tweens) y el
+  CSS que ocultaba el TOP 3 en vertical (acá el menú se dibuja en el canvas de
+  Phaser, no en DOM; TOP 3 y "Ver ranking" ya se ven en 420x880).
+
+  Validación: 19 chequeos automatizados en Chromium headless — host iframe y
+  host React Native WebView simulados, con API de leaderboard mockeada. Se
+  verificó el handshake completo en ambos, que MINIGAME_STARTED sale sin
+  conocer el origen (misma ruta que GAME_COMPLETE), que sin host no se muestra
+  el preview, y que en un navegador sin soporte ogg se piden los 14 .m4a y
+  desaparece el warning "not in cache". 0 errores de página en todos los casos.
+  No se probó en un dispositivo físico ni contra el host real de Sura.
+
+Cómo usar esta build:
+  - Servir dist/ (o el contenido del ZIP) con cualquier servidor HTTP
+    estático: npx serve dist, o python -m http.server 8000 adentro de
+    la carpeta. Los módulos JS requieren servidor — abrir index.html
+    con doble clic bloquea la carga.
+
+Validación hecha sobre esta build:
+  - Parseo del bundle (node --check) sin errores.
+  - Servida por HTTP y cargada en un navegador real (Chromium/Edge,
+    viewport 420x880): 0 errores de consola, 0 errores de página,
+    0 requests fallidos, 0 respuestas 4xx/5xx.
+  - Menú: render completo, pilotos, top 3, récord y chips de idioma.
+  - Partida: JUGAR arranca, el piloto aparece de espalda, el fuego del
+    motor queda anclado y los meteoritos spawnean.
+  - No se probó en dispositivos móviles físicos ni contra el host real
+    de Sura (INIT_GAME / GAME_COMPLETE); el leaderboard cae al listado
+    de preview mientras no lleguen gameId y apiBaseUrl.
+
+Nota: assets/player/suri.png y suri-wave.png son la versión vieja de Suri
+y no los carga nadie (el juego usa suri-v2). favicon.png tampoco se usa:
+index.html apunta a assets/player/suri-v2.png como ícono. Se dejaron en la
+build igual, tal cual venían; sacarlos ahorraría ~1,6 MB.
